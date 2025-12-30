@@ -1,0 +1,38 @@
+{
+  "fun_args":
+  {
+    "debug": false,
+    "tensorboard": true,
+    "tsboard_comm": "larger",
+    "random_seed": 42
+  },
+  "env_args":
+  {
+    "train_ratio": 0.4,
+    "sim_days": 14,
+    "seq_num": 1,
+    "unique_len": 16,
+    "dataset": "basic",
+    "epi_dyna": "SARS-CoV-2"
+  },
+  "model_args":
+  {
+    "loc_dp": true,
+    "loc_eps": 1,
+    "loc_delt": 0.001,
+    "loc_clip": 0.1,
+    "fl_dp": true,
+    "fl_eps": 1,
+    "fl_delt": 0.001,
+    "fl_clip": 0.1,
+    "macro": false
+  },
+  "optim_args":
+  {
+    "max_epoch": 500,
+    "lr": 0.01,
+    "milestones": [100, 200, 300],
+    "gamma": 0.7,
+    "weight_decay": 0.0005
+  }
+}
