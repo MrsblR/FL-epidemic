@@ -177,7 +177,21 @@ class Dp_HypergraphConv(MessagePassing):
                  concat=True, negative_slope=0.2, dropout=0, bias=True,
                  **kwargs):
         kwargs.setdefault('aggr', 'add')
-        super().__init__(flow='source_to_target', node_dim=0, **kwargs)
+        # Extra args used for DP/macro; strip them so MessagePassing sees only supported ones.
+        self.loc_dp = kwargs.pop('loc_dp', False)
+        loc_eps = kwargs.pop('loc_eps', None)
+        loc_delt = kwargs.pop('loc_delt', None)
+        loc_clip = kwargs.pop('loc_clip', None)
+        self.macro = kwargs.pop('macro', False)
+        loc_emb_dim = kwargs.pop('loc_emb_dim', 0)
+        # Drop federated DP args that are irrelevant here.
+        kwargs.pop('fl_dp', None)
+        kwargs.pop('fl_eps', None)
+        kwargs.pop('fl_delt', None)
+        kwargs.pop('fl_clip', None)
+        aggr = kwargs.pop('aggr', 'add')
+        # Ignore any remaining kwargs to avoid PyG errors with custom args.
+        super().__init__(flow='source_to_target', node_dim=0, aggr=aggr)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -204,13 +218,11 @@ class Dp_HypergraphConv(MessagePassing):
         else:
             self.register_parameter('bias', None)
 
-        model_args = kwargs
-        self.loc_dp = model_args['loc_dp']
-        if model_args['loc_dp']:
-            self.agg_dp = Dp_Agg(model_args['loc_eps'], model_args['loc_delt'], model_args['loc_clip'])
-        if model_args['macro']:
-            self.bias = Parameter(torch.Tensor(out_channels + model_args['loc_emb_dim']))
-            self.trans = torch.nn.Linear(out_channels + model_args['loc_emb_dim'], out_channels, bias=True)
+        if self.loc_dp:
+            self.agg_dp = Dp_Agg(loc_eps, loc_delt, loc_clip)
+        if self.macro:
+            self.bias = Parameter(torch.Tensor(out_channels + loc_emb_dim))
+            self.trans = torch.nn.Linear(out_channels + loc_emb_dim, out_channels, bias=True)
 
         self.reset_parameters()
     def reset_parameters(self):
